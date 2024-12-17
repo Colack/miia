@@ -1,0 +1,8 @@
+*.csv
+*.spec
+*.log
+/dist
+/build
+__pycache__
+*.pyc
+credentials.json
