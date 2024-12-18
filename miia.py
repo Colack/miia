@@ -23,6 +23,8 @@ import bcrypt
 from dotenv import load_dotenv
 from tkinter import ttk, messagebox
 from screeninfo import get_monitors
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
 #####
 # Global Variables
@@ -491,6 +493,7 @@ class LoginScreen(tk.Frame):
         
         if self.user_manager.login_user(username, password):
             messagebox.showinfo("Login", "Login successful")
+            self.app.show_screen(DashboardScreen(self.master, self.app))
         else:
             messagebox.showerror("Login", "Login failed")
             
@@ -501,6 +504,454 @@ class LoginScreen(tk.Frame):
         self.user_manager.register_user(username, password)
         messagebox.showinfo("Register", "User registered")
         
+#####
+# Dashboard Screen
+#####
+
+class DashboardScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Dashboard")
+        
+        self.create_button = create_button(self, "Create CSV", self.create_csv)
+        self.list_button = create_button(self, "List CSV", self.list_csv)
+        self.open_button = create_button(self, "Open CSV", self.open_csv)
+        self.delete_button = create_button(self, "Delete CSV", self.delete_csv)
+        self.rename_button = create_button(self, "Rename CSV", self.rename_csv)
+        self.backup_button = create_button(self, "Backup", self.backup)
+        self.logout_button = create_button(self, "Logout", self.logout)
+        
+    def create_csv(self):
+        self.app.show_screen(CreateCSVScreen(self.master, self.app))
+        
+    def list_csv(self):
+        self.app.show_screen(ListCSVScreen(self.master, self.app))
+        
+    def open_csv(self):
+        self.app.show_screen(OpenCSVScreen(self.master, self.app))
+        
+    def delete_csv(self):
+        self.app.show_screen(DeleteCSVScreen(self.master, self.app))
+        
+    def rename_csv(self):
+        self.app.show_screen(RenameCSVScreen(self.master, self.app))
+        
+    def backup(self):
+        self.app.show_screen(BackupScreen(self.master, self.app))
+        
+    def logout(self):
+        self.app.show_screen(LoginScreen(self.master, self.app))
+        
+#####
+# Create CSV Screen
+#####
+
+class CreateCSVScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Create CSV")
+        
+        create_label(self, "Name")
+        self.name_var = tk.StringVar()
+        self.name_entry = create_entry(self, textvariable=self.name_var)
+        
+        create_label(self, "Fields")
+        self.fields_var = tk.StringVar()
+        self.fields_entry = create_entry(self, textvariable=self.fields_var)
+        
+        self.create_button = create_button(self, "Create", self.create_csv)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def create_csv(self):
+        name = self.name_var.get()
+        fields = self.fields_var.get().split(",")
+        
+        if self.file_manager.create_csv(name, fields):
+            messagebox.showinfo("Create CSV", "CSV created")
+            self.app.show_screen(DashboardScreen(self.master, self.app))
+        else:
+            messagebox.showerror("Create CSV", "Failed to create CSV")
+            
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# List CSV Screen
+#####
+
+class ListCSVScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "List CSV")
+        
+        csv_files = self.file_manager.list_csv()
+        for csv_file in csv_files:
+            create_label(self, csv_file)
+        
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# Open CSV Screen
+#####
+
+class OpenCSVScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Open CSV")
+        
+        create_label(self, "Name")
+        self.name_var = tk.StringVar()
+        self.name_entry = create_entry(self, textvariable=self.name_var)
+        
+        self.open_button = create_button(self, "Open", self.open_csv)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def open_csv(self):
+        name = self.name_var.get()
+        fields = self.file_manager.get_fields(name)
+        data = self.file_manager.read_csv(name)
+        
+        self.app.show_screen(CSVScreen(self.master, self.app, name, fields, data))
+        
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# Delete CSV Screen
+#####
+
+class DeleteCSVScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Delete CSV")
+        
+        create_label(self, "Name")
+        self.name_var = tk.StringVar()
+        self.name_entry = create_entry(self, textvariable=self.name_var)
+        
+        self.delete_button = create_button(self, "Delete", self.delete_csv)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def delete_csv(self):
+        name = self.name_var.get()
+        
+        if self.file_manager.delete_csv(name):
+            messagebox.showinfo("Delete CSV", "CSV deleted")
+            self.app.show_screen(DashboardScreen(self.master, self.app))
+        else:
+            messagebox.showerror("Delete CSV", "Failed to delete CSV")
+            
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# Rename CSV Screen
+#####
+
+class RenameCSVScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Rename CSV")
+        
+        create_label(self, "Name")
+        self.name_var = tk.StringVar()
+        self.name_entry = create_entry(self, textvariable=self.name_var)
+        
+        create_label(self, "New Name")
+        self.new_name_var = tk.StringVar()
+        self.new_name_entry = create_entry(self, textvariable=self.new_name_var)
+        
+        self.rename_button = create_button(self, "Rename", self.rename_csv)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def rename_csv(self):
+        name = self.name_var.get()
+        new_name = self.new_name_var.get()
+        
+        if self.file_manager.rename_csv(name, new_name):
+            messagebox.showinfo("Rename CSV", "CSV renamed")
+            self.app.show_screen(DashboardScreen(self.master, self.app))
+        else:
+            messagebox.showerror("Rename CSV", "Failed to rename CSV")
+            
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# Backup Screen
+#####
+
+class BackupScreen(tk.Frame):
+    def __init__(self, parent, app):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Backup")
+        
+        self.backup_button = create_button(self, "Backup", self.backup)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def backup(self):
+        if self.file_manager.backup():
+            messagebox.showinfo("Backup", "Backup created")
+            self.app.show_screen(DashboardScreen(self.master, self.app))
+        else:
+            messagebox.showerror("Backup", "Failed to create backup")
+            
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# CSV Screen
+#####
+
+class CSVScreen(tk.Frame):
+    def __init__(self, parent, app, name, fields, data):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.name = name
+        self.fields = fields
+        self.data = data
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, self.name)
+        
+        self.tree = ttk.Treeview(self, columns=self.fields, show="headings")
+        for field in self.fields:
+            self.tree.heading(field, text=field)
+        for row in self.data:
+            self.tree.insert("", "end", values=row)
+        self.tree.pack(expand=True, fill='both')
+        
+        self.add_button = create_button(self, "Add Row", self.add_row)
+        self.update_button = create_button(self, "Update Row", self.update_row)
+        self.delete_button = create_button(self, "Delete Row", self.delete_row)
+        self.search_button = create_button(self, "Search Row", self.search_row)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def add_row(self):
+        self.app.show_screen(AddRowScreen(self.master, self.app, self.name, self.fields))
+        
+    def update_row(self):
+        self.app.show_screen(UpdateRowScreen(self.master, self.app, self.name, self.fields, self.data))
+        
+    def delete_row(self):
+        self.app.show_screen(DeleteRowScreen(self.master, self.app, self.name, self.fields, self.data))
+        
+    def search_row(self):
+        self.app.show_screen(SearchRowScreen(self.master, self.app, self.name, self.fields))
+        
+    def back(self):
+        self.app.show_screen(DashboardScreen(self.master, self.app))
+        
+#####
+# Add Row Screen
+#####
+
+class AddRowScreen(tk.Frame):
+    def __init__(self, parent, app, name, fields):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.name = name
+        self.fields = fields
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Add Row")
+        
+        self.row = []
+        for field in self.fields:
+            create_label(self, field)
+            var = tk.StringVar()
+            entry = create_entry(self, textvariable=var)
+            self.row.append(var)
+        
+        self.add_button = create_button(self, "Add", self.add_row)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def add_row(self):
+        row = [var.get() for var in self.row]
+        
+        if self.file_manager.add_row(self.name, row):
+            messagebox.showinfo("Add Row", "Row added")
+            self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        else:
+            messagebox.showerror("Add Row", "Failed to add row")
+            
+    def back(self):
+        self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        
+#####
+# Update Row Screen
+#####
+class UpdateRowScreen(tk.Frame):
+    def __init__(self, parent, app, name, fields, data):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.name = name
+        self.fields = fields
+        self.data = data
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Update Row")
+        
+        self.tree = ttk.Treeview(self, columns=self.fields, show="headings")
+        for field in self.fields:
+            self.tree.heading(field, text=field)
+        for row in self.data:
+            self.tree.insert("", "end", values=row)
+        self.tree.pack(expand=True, fill='both')
+        
+        create_label(self, "Index")
+        self.index_var = tk.IntVar()
+        self.index_entry = create_entry(self, textvariable=self.index_var)
+        
+        self.row = []
+        for field in self.fields:
+            create_label(self, field)
+            var = tk.StringVar()
+            entry = create_entry(self, textvariable=var)
+            self.row.append(var)
+        
+        self.update_button = create_button(self, "Update", self.update_row)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def update_row(self):
+        index = self.index_var.get()
+        row = [var.get() for var in self.row]
+        
+        if self.file_manager.update_row(self.name, index, row):
+            messagebox.showinfo("Update Row", "Row updated")
+            self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        else:
+            messagebox.showerror("Update Row", "Failed to update row")
+            
+    def back(self):
+        self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        
+#####
+# Delete Row Screen
+#####
+
+class DeleteRowScreen(tk.Frame):
+    def __init__(self, parent, app, name, fields, data):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.name = name
+        self.fields = fields
+        self.data = data
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Delete Row")
+        
+        self.tree = ttk.Treeview(self, columns=self.fields, show="headings")
+        for field in self.fields:
+            self.tree.heading(field, text=field)
+        for row in self.data:
+            self.tree.insert("", "end", values=row)
+        self.tree.pack(expand=True, fill='both')
+        
+        create_label(self, "Index")
+        self.index_var = tk.IntVar()
+        self.index_entry = create_entry(self, textvariable=self.index_var)
+        
+        self.delete_button = create_button(self, "Delete", self.delete_row)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def delete_row(self):
+        index = self.index_var.get()
+        
+        if self.file_manager.delete_row(self.name, index):
+            messagebox.showinfo("Delete Row", "Row deleted")
+            self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        else:
+            messagebox.showerror("Delete Row", "Failed to delete row")
+            
+    def back(self):
+        self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
+        
+#####
+# Search Row Screen
+#####
+
+class SearchRowScreen(tk.Frame):
+    def __init__(self, parent, app, name, fields):
+        tk.Frame.__init__(self, parent)
+        self.app = app
+        self.file_manager = FileManager()
+        self.name = name
+        self.fields = fields
+        self.setup_ui()
+        
+    def setup_ui(self):
+        create_label(self, "Search Row")
+        
+        create_label(self, "Field")
+        self.field_var = tk.StringVar()
+        self.field_entry = create_entry(self, textvariable=self.field_var)
+        
+        create_label(self, "Value")
+        self.value_var = tk.StringVar()
+        self.value_entry = create_entry(self, textvariable=self.value_var)
+        
+        self.search_button = create_button(self, "Search", self.search_row)
+        self.back_button = create_button(self, "Back", self.back)
+        
+    def search_row(self):
+        field = self.field_var.get()
+        value = self.value_var.get()
+        
+        result = self.file_manager.search_row(self.name, field, value)
+        if result:
+            index, row = result
+            messagebox.showinfo("Search Row", f"Row found at index {index}")
+        else:
+            messagebox.showerror("Search Row", "Row not found")
+            
+    def back(self):
+        self.app.show_screen(CSVScreen(self.master, self.app, self.name, self.fields, self.file_manager.read_csv(self.name)))
 
 # Utility Functions
 def create_button(parent, text, command, **kwargs):
