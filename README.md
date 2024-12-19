@@ -14,11 +14,7 @@ Miia is a Python application that allows you to view, search, add, edit, and del
 
 - Python 3.x
 - Required Python packages (listed in `requirements.txt`):
-  - `ttkbootstrap`
-  - `PyDrive`
-  - `PyInstaller`
-  - `python-dotenv`
-  - `pyfiglet`
+  - `tkinter`
   - `pandas`
   - `pyautogui`
 
