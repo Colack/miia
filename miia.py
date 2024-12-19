@@ -3,7 +3,27 @@
     Miia v0.1.0
     (c) 2024 by Jack Spencer
     
-    This is a tkinter program to edit, modify, and update CSV tables.
+    This is a very early prototype of Miia, a CSV file manager with a GUI.
+    Think of Google Sheets, but with a desktop application and more functionality.
+    
+    License is MIT, so feel free to use, modify, and distribute this code as you see fit.
+    Changes are logged in the CHANGELOG.md file.
+"""
+
+"""
+    Upcoming Features:
+        - User Management with Roles
+        - Google Drive Integration
+        - Backup and Restore using a git-esc system
+        - Dark and Light Mode, plus custom themes
+        - CSV Table Editing, Updating, and Deleting
+        - CSV Table Searching and Filtering
+        - CSV Table Sorting and Grouping
+        - CSV Table Exporting and Importing
+        - CSV Table Visualization and Analysis
+        - Use of Pandas and Matplotlib for Data Analysis
+        - Use of SQLite for Database Management instead of JSON / CSV
+        - Swap to pyautogui for GUI Automation
 """
 
 #####
